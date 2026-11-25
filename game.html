@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>星尘跃迁 · STAR DRIFT 小游戏</title>
+  <style>
+    :root {
+      --bg-0: #060913;
+      --bg-1: #0b132b;
+      --panel: rgba(15, 23, 46, 0.78);
+      --border: rgba(125, 211, 252, 0.22);
+      --cyan: #38bdf8;
+      --violet: #a78bfa;
+      --gold: #fbbf24;
+      --rose: #fb7185;
+      --emerald: #34d399;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    html, body {
+      height: 100%;
+      background: radial-gradient(circle at 20% 15%, #172554 0%, #070b18 52%, #03060f 100%);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI", Roboto, sans-serif;
+      overflow: hidden;
+    }
+
+    .app {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 14px;
+      gap: 12px;
+    }
+
+    .topbar {
+      width: min(860px, 100%);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 16px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .brand-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--cyan), var(--violet));
+      box-shadow: 0 0 14px var(--cyan);
+      flex-shrink: 0;
+    }
+
+    .brand h1 {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+
+    .brand span {
+      font-size: 12px;
+      color: var(--muted);
+      margin-left: 4px;
+      font-weight: 500;
+    }
+
+    .hud {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .stat {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      line-height: 1.15;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+    }
+
+    .stat-value {
+      font-size: 18px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      color: var(--text);
+    }
+
+    .stat-value.gold { color: var(--gold); }
+    .stat-value.cyan { color: var(--cyan); }
+
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .icon-btn {
+      border: 1px solid var(--border);
+      background: rgba(30, 41, 75, 0.7);
+      color: var(--text);
+      padding: 7px 11px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s ease, border-color 0.2s ease, background 0.2s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .icon-btn:hover {
+      border-color: var(--cyan);
+      background: rgba(56, 189, 248, 0.16);
+      transform: translateY(-1px);
+    }
+
+    .stage-wrap {
+      position: relative;
+      width: min(860px, 100%);
+      flex: 1;
+      min-height: 360px;
+      max-height: 620px;
+      border-radius: 22px;
+      overflow: hidden;
+      border: 1px solid rgba(125, 211, 252, 0.28);
+      background: #050814;
+      box-shadow:
+        0 24px 70px rgba(0, 0, 0, 0.55),
+        inset 0 0 40px rgba(56, 189, 248, 0.08);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+    }
+
+    .energy-bar-wrap {
+      position: absolute;
+      left: 16px;
+      bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 12px;
+      background: rgba(7, 12, 26, 0.72);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      backdrop-filter: blur(8px);
+      pointer-events: none;
+    }
+
+    .energy-label {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .energy-track {
+      width: 120px;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(148, 163, 184, 0.2);
+      overflow: hidden;
+    }
+
+    .energy-fill {
+      height: 100%;
+      width: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--cyan), var(--violet));
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.6);
+      transition: width 0.08s linear;
+    }
+
+    .lives-wrap {
+      position: absolute;
+      right: 16px;
+      bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      border-radius: 12px;
+      background: rgba(7, 12, 26, 0.72);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      backdrop-filter: blur(8px);
+      pointer-events: none;
+      font-size: 14px;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: radial-gradient(circle at center, rgba(10, 18, 40, 0.72), rgba(4, 7, 16, 0.88));
+      backdrop-filter: blur(6px);
+      transition: opacity 0.25s ease;
+    }
+
+    .overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .card {
+      width: min(440px, 100%);
+      padding: 28px 26px;
+      border-radius: 22px;
+      background: rgba(13, 21, 44, 0.92);
+      border: 1px solid rgba(125, 211, 252, 0.3);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+      text-align: center;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--cyan);
+      background: rgba(56, 189, 248, 0.14);
+      border: 1px solid rgba(56, 189, 248, 0.32);
+      margin-bottom: 12px;
+    }
+
+    .card h2 {
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 10px;
+      background: linear-gradient(120deg, #ffffff 10%, #7dd3fc 55%, #c4b5fd 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .card p {
+      font-size: 14px;
+      line-height: 1.65;
+      color: #cbd5e1;
+      margin-bottom: 18px;
+    }
+
+    .rules {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 22px;
+      text-align: left;
+    }
+
+    .rule {
+      padding: 10px;
+      border-radius: 12px;
+      background: rgba(30, 41, 75, 0.52);
+      border: 1px solid rgba(148, 163, 184, 0.16);
+    }
+
+    .rule strong {
+      display: block;
+      font-size: 12px;
+      color: #f8fafc;
+      margin-bottom: 4px;
+    }
+
+    .rule span {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.4;
+      display: block;
+    }
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 22px;
+    }
+
+    .result-item {
+      padding: 12px 8px;
+      border-radius: 14px;
+      background: rgba(30, 41, 75, 0.55);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+    }
+
+    .result-item small {
+      display: block;
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .result-item b {
+      font-size: 20px;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .primary-btn {
+      width: 100%;
+      border: none;
+      border-radius: 14px;
+      padding: 13px 20px;
+      font-size: 15px;
+      font-weight: 700;
+      color: #06101f;
+      background: linear-gradient(135deg, #38bdf8, #a78bfa);
+      cursor: pointer;
+      box-shadow: 0 10px 28px rgba(56, 189, 248, 0.35);
+      transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
+    }
+
+    .primary-btn:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.06);
+      box-shadow: 0 14px 34px rgba(56, 189, 248, 0.45);
+    }
+
+    .primary-btn:active {
+      transform: translateY(0);
+    }
+
+    .footer-tip {
+      width: min(860px, 100%);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--muted);
+      padding: 0 4px;
+    }
+
+    kbd {
+      display: inline-block;
+      padding: 2px 6px;
+      font-size: 11px;
+      border-radius: 6px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      background: rgba(15, 23, 42, 0.8);
+      color: #e2e8f0;
+      font-family: inherit;
+    }
+
+    @media (max-width: 640px) {
+      .topbar {
+        padding: 8px 12px;
+      }
+      .brand span,
+      .footer-tip {
+        display: none;
+      }
+      .hud {
+        gap: 10px;
+      }
+      .stat-value {
+        font-size: 15px;
+      }
+      .rules {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-dot"></div>
+        <h1>星尘跃迁 <span>STAR DRIFT</span></h1>
+      </div>
+      <div class="hud">
+        <div class="stat">
+          <span class="stat-label">得分</span>
+          <span class="stat-value cyan" id="scoreEl">0</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">连击</span>
+          <span class="stat-value gold" id="comboEl">x1</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">最高分</span>
+          <span class="stat-value" id="bestEl">0</span>
+        </div>
+        <div class="actions">
+          <button class="icon-btn" id="soundBtn" type="button" title="音效开关">🔊 音效</button>
+          <button class="icon-btn" id="pauseBtn" type="button" title="暂停/继续">⏸ 暂停</button>
+          <a class="icon-btn" href="landing.html" title="返回宣传页">✦ 宣传页</a>
+        </div>
+      </div>
+    </header>
+
+    <main class="stage-wrap" id="stageWrap">
+      <canvas id="gameCanvas"></canvas>
+
+      <div class="energy-bar-wrap">
+        <span class="energy-label">冲刺能量</span>
+        <div class="energy-track">
+          <div class="energy-fill" id="energyFill"></div>
+        </div>
+      </div>
+
+      <div class="lives-wrap" id="livesEl" aria-label="生命值"></div>
+
+      <div class="overlay" id="startOverlay">
+        <div class="card">
+          <div class="badge">ARCADE MINI GAME</div>
+          <h2>星尘跃迁</h2>
+          <p>驾驶微型星际飞船穿越深空陨石带，收集金色星尘叠加连击倍数，善用「相位冲刺」无敌穿梭险境。</p>
+          <div class="rules">
+            <div class="rule">
+              <strong>移动控制</strong>
+              <span>WASD / 方向键，或直接鼠标 / 触屏拖拽</span>
+            </div>
+            <div class="rule">
+              <strong>相位冲刺</strong>
+              <span>按空格 / 双击触发短暂无敌加速并震碎近身陨石</span>
+            </div>
+            <div class="rule">
+              <strong>护盾补给</strong>
+              <span>拾取青色护盾球可恢复生命并获得额外加成</span>
+            </div>
+          </div>
+          <button class="primary-btn" id="startBtn" type="button">立即起航</button>
+        </div>
+      </div>
+
+      <div class="overlay hidden" id="pauseOverlay">
+        <div class="card">
+          <div class="badge">PAUSED</div>
+          <h2>航行已暂停</h2>
+          <p>飞船正停泊在静滞轨道，随时可以继续冒险。</p>
+          <button class="primary-btn" id="resumeBtn" type="button">继续航行</button>
+        </div>
+      </div>
+
+      <div class="overlay hidden" id="gameOverOverlay">
+        <div class="card">
+          <div class="badge">MISSION COMPLETE</div>
+          <h2>跃迁终止</h2>
+          <p id="overHint">你成功穿越了深空星带，再刷新一次纪录吧！</p>
+          <div class="result-grid">
+            <div class="result-item">
+              <small>本局得分</small>
+              <b id="finalScore">0</b>
+            </div>
+            <div class="result-item">
+              <small>最大连击</small>
+              <b id="finalCombo">x1</b>
+            </div>
+            <div class="result-item">
+              <small>历史最高</small>
+              <b id="finalBest">0</b>
+            </div>
+          </div>
+          <button class="primary-btn" id="restartBtn" type="button">再来一局</button>
+        </div>
+      </div>
+    </main>
+
+    <footer class="footer-tip">
+      <div>操作：<kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> 或鼠标移动 · <kbd>Space</kbd> 相位冲刺 · <kbd>P</kbd> 暂停</div>
+      <div>提示：持续拾取星尘可维持高倍连击，护盾满血时拾取补给将转化为高额奖励分</div>
+    </footer>
+  </div>
+
+  <script>
+    (() => {
+      const canvas = document.getElementById("gameCanvas");
+      const ctx = canvas.getContext("2d");
+      const stageWrap = document.getElementById("stageWrap");
+
+      const scoreEl = document.getElementById("scoreEl");
+      const comboEl = document.getElementById("comboEl");
+      const bestEl = document.getElementById("bestEl");
+      const energyFill = document.getElementById("energyFill");
+      const livesEl = document.getElementById("livesEl");
+
+      const startOverlay = document.getElementById("startOverlay");
+      const pauseOverlay = document.getElementById("pauseOverlay");
+      const gameOverOverlay = document.getElementById("gameOverOverlay");
+      const finalScoreEl = document.getElementById("finalScore");
+      const finalComboEl = document.getElementById("finalCombo");
+      const finalBestEl = document.getElementById("finalBest");
+      const overHintEl = document.getElementById("overHint");
+
+      const startBtn = document.getElementById("startBtn");
+      const resumeBtn = document.getElementById("resumeBtn");
+      const restartBtn = document.getElementById("restartBtn");
+      const pauseBtn = document.getElementById("pauseBtn");
+      const soundBtn = document.getElementById("soundBtn");
+
+      const BEST_KEY = "star_drift_best_score_v1";
+      let width = 800;
+      let height = 520;
+      let dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+      // Web Audio lightweight synth sound effects
+      let soundOn = true;
+      let audioCtx = null;
+
+      function ensureAudio() {
+        if (!soundOn) return null;
+        if (!audioCtx) {
+          const Ctx = window.AudioContext || window.webkitAudioContext;
+          if (Ctx) audioCtx = new Ctx();
+        }
+        if (audioCtx && audioCtx.state === "suspended") {
+          audioCtx.resume().catch(() => {});
+        }
+        return audioCtx;
+      }
+
+      function playTone(freq, endFreq, duration, type = "sine", gainVal = 0.08) {
+        const ac = ensureAudio();
+        if (!ac) return;
+        const now = ac.currentTime;
+        const osc = ac.createOscillator();
+        const gain = ac.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, now);
+        osc.frequency.exponentialRampToValueAtTime(Math.max(40, endFreq), now + duration);
+        gain.gain.setValueAtTime(gainVal, now);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+        osc.connect(gain);
+        gain.connect(ac.destination);
+        osc.start(now);
+        osc.stop(now + duration);
+      }
+
+      function resize() {
+        const rect = stageWrap.getBoundingClientRect();
+        width = Math.max(320, Math.floor(rect.width));
+        height = Math.max(320, Math.floor(rect.height));
+        dpr = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = Math.floor(width * dpr);
+        canvas.height = Math.floor(height * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        if (player) {
+          player.x = Math.min(Math.max(player.x, 28), width - 28);
+          player.y = Math.min(Math.max(player.y, 28), height - 28);
+        }
+      }
+
+      const bgStars = Array.from({ length: 95 }, () => ({
+        x: Math.random(),
+        y: Math.random(),
+        r: Math.random() * 1.8 + 0.4,
+        speed: Math.random() * 65 + 25,
+        alpha: Math.random() * 0.6 + 0.25
+      }));
+
+      let state = "menu"; // menu | playing | paused | over
+      let score = 0;
+      let bestScore = Number(localStorage.getItem(BEST_KEY) || 0);
+      let combo = 1;
+      let maxCombo = 1;
+      let comboTimer = 0;
+      let elapsed = 0;
+      let shakeTime = 0;
+      let shakeMag = 0;
+
+      const keys = new Set();
+      const pointer = { active: false, x: 0, y: 0, lastTap: 0 };
+
+      let player = null;
+      let hazards = [];
+      let pickups = [];
+      let particles = [];
+      let floatTexts = [];
+      let trail = [];
+      let spawnHazardTimer = 0;
+      let spawnStarTimer = 0;
+      let spawnShieldTimer = 0;
+
+      bestEl.textContent = String(bestScore);
+
+      function resetGame() {
+        score = 0;
+        combo = 1;
+        maxCombo = 1;
+        comboTimer = 0;
+        elapsed = 0;
+        shakeTime = 0;
+        shakeMag = 0;
+        hazards = [];
+        pickups = [];
+        particles = [];
+        floatTexts = [];
+        trail = [];
+        spawnHazardTimer = 0.6;
+        spawnStarTimer = 0.4;
+        spawnShieldTimer = 9;
+
+        player = {
+          x: width * 0.25,
+          y: height * 0.5,
+          vx: 0,
+          vy: 0,
+          r: 15,
+          lives: 3,
+          maxLives: 3,
+          invuln: 1.0,
+          dashTime: 0,
+          energy: 100,
+          angle: 0
+        };
+
+        syncHud();
+      }
+
+      function syncHud() {
+        scoreEl.textContent = Math.floor(score).toLocaleString();
+        comboEl.textContent = `x${combo}`;
+        bestEl.textContent = bestScore.toLocaleString();
+        if (player) {
+          energyFill.style.width = `${Math.max(0, Math.min(100, player.energy))}%`;
+          const hearts = [];
+          for (let i = 0; i < player.maxLives; i++) {
+            hearts.push(i < player.lives ? "🩵" : "🖤");
+          }
+          livesEl.textContent = hearts.join(" ");
+        }
+      }
+
+      function addBurst(x, y, color, count = 16, speed = 170) {
+        for (let i = 0; i < count; i++) {
+          const a = (Math.PI * 2 * i) / count + Math.random() * 0.4;
+          const v = speed * (0.4 + Math.random() * 0.75);
+          particles.push({
+            x,
+            y,
+            vx: Math.cos(a) * v,
+            vy: Math.sin(a) * v,
+            r: Math.random() * 3.2 + 1.4,
+            life: 0.45 + Math.random() * 0.35,
+            maxLife: 0.8,
+            color
+          });
+        }
+      }
+
+      function addFloatText(x, y, text, color = "#fbbf24") {
+        floatTexts.push({
+          x,
+          y,
+          text,
+          color,
+          life: 0.9,
+          maxLife: 0.9
+        });
+      }
+
+      function triggerDash() {
+        if (state !== "playing" || !player) return;
+        if (player.energy < 45 || player.dashTime > 0) return;
+        player.energy -= 45;
+        player.dashTime = 0.28;
+        player.invuln = Math.max(player.invuln, 0.38);
+        playTone(520, 980, 0.16, "triangle", 0.09);
+        addBurst(player.x, player.y, "#38bdf8", 18, 220);
+
+        // Shockwave destroys very close hazards
+        for (let i = hazards.length - 1; i >= 0; i--) {
+          const h = hazards[i];
+          const dx = h.x - player.x;
+          const dy = h.y - player.y;
+          if (Math.hypot(dx, dy) < h.r + 95) {
+            addBurst(h.x, h.y, "#a78bfa", 16, 180);
+            score += 35 * combo;
+            addFloatText(h.x, h.y, `+${35 * combo}`, "#c4b5fd");
+            hazards.splice(i, 1);
+          }
+        }
+      }
+
+      function spawnHazard() {
+        const difficulty = 1 + Math.min(elapsed / 28, 2.4);
+        const r = 14 + Math.random() * 20;
+        const speed = (145 + Math.random() * 145) * difficulty;
+        const fromTop = Math.random() < 0.24;
+        let x, y, vx, vy;
+        if (fromTop) {
+          x = width * (0.25 + Math.random() * 0.75);
+          y = -r - 10;
+          vx = -(70 + Math.random() * 90) * difficulty;
+          vy = speed * 0.75;
+        } else {
+          x = width + r + 14;
+          y = 26 + Math.random() * (height - 52);
+          vx = -speed;
+          vy = (Math.random() - 0.5) * 90;
+        }
+
+        const sides = 6 + Math.floor(Math.random() * 4);
+        const offsets = Array.from({ length: sides }, () => 0.76 + Math.random() * 0.34);
+
+        hazards.push({
+          x,
+          y,
+          vx,
+          vy,
+          r,
+          rot: Math.random() * Math.PI * 2,
+          rotSpeed: (Math.random() - 0.5) * 3.4,
+          sides,
+          offsets
+        });
+      }
+
+      function spawnPickup(kind = "star") {
+        const x = width + 24;
+        const y = 42 + Math.random() * (height - 84);
+        pickups.push({
+          kind,
+          x,
+          y,
+          vx: kind === "shield" ? -135 : -(130 + Math.random() * 75),
+          vy: (Math.random() - 0.5) * 40,
+          r: kind === "shield" ? 13 : 11,
+          phase: Math.random() * Math.PI * 2
+        });
+      }
+
+      function damagePlayer() {
+        if (player.invuln > 0) return;
+        player.lives -= 1;
+        player.invuln = 1.6;
+        combo = 1;
+        comboTimer = 0;
+        shakeTime = 0.3;
+        shakeMag = 9;
+        playTone(190, 55, 0.26, "sawtooth", 0.11);
+        addBurst(player.x, player.y, "#fb7185", 26, 230);
+        addFloatText(player.x, player.y - 18, "护盾受损!", "#fb7185");
+
+        if (player.lives <= 0) {
+          endGame();
+        }
+      }
+
+      function endGame() {
+        state = "over";
+        const final = Math.floor(score);
+        const isRecord = final > bestScore;
+        if (isRecord) {
+          bestScore = final;
+          localStorage.setItem(BEST_KEY, String(bestScore));
+        }
+        finalScoreEl.textContent = final.toLocaleString();
+        finalComboEl.textContent = `x${maxCombo}`;
+        finalBestEl.textContent = bestScore.toLocaleString();
+        overHintEl.textContent = isRecord
+          ? "太棒了！你刷新了全新的深空航行最高纪录！"
+          : "陨石带越来越密集了，试试利用相位冲刺震碎近身障碍吧！";
+        gameOverOverlay.classList.remove("hidden");
+        syncHud();
+      }
+
+      function startGame() {
+        ensureAudio();
+        resetGame();
+        state = "playing";
+        startOverlay.classList.add("hidden");
+        pauseOverlay.classList.add("hidden");
+        gameOverOverlay.classList.add("hidden");
+        playTone(360, 720, 0.18, "triangle", 0.08);
+      }
+
+      function togglePause() {
+        if (state === "playing") {
+          state = "paused";
+          pauseOverlay.classList.remove("hidden");
+          pauseBtn.textContent = "▶ 继续";
+        } else if (state === "paused") {
+          state = "playing";
+          pauseOverlay.classList.add("hidden");
+          pauseBtn.textContent = "⏸ 暂停";
+        }
+      }
+
+      function update(dt) {
+        // Animate starfield even on menu
+        const bgBoost = state === "playing" && player && player.dashTime > 0 ? 3.2 : 1;
+        for (const s of bgStars) {
+          s.x -= (s.speed * bgBoost * dt) / width;
+          if (s.x < 0) {
+            s.x = 1;
+            s.y = Math.random();
+          }
+        }
+
+        if (state !== "playing" || !player) return;
+
+        elapsed += dt;
+        score += dt * (12 + combo * 2);
+
+        if (comboTimer > 0) {
+          comboTimer -= dt;
+          if (comboTimer <= 0) {
+            combo = 1;
+          }
+        }
+
+        if (shakeTime > 0) {
+          shakeTime = Math.max(0, shakeTime - dt);
+        }
+
+        player.invuln = Math.max(0, player.invuln - dt);
+        player.dashTime = Math.max(0, player.dashTime - dt);
+        player.energy = Math.min(100, player.energy + dt * 19);
+
+        // Movement via keyboard or pointer
+        let mx = 0;
+        let my = 0;
+        if (keys.has("ArrowUp") || keys.has("KeyW")) my -= 1;
+        if (keys.has("ArrowDown") || keys.has("KeyS")) my += 1;
+        if (keys.has("ArrowLeft") || keys.has("KeyA")) mx -= 1;
+        if (keys.has("ArrowRight") || keys.has("KeyD")) mx += 1;
+
+        const baseSpeed = player.dashTime > 0 ? 590 : 340;
+        if (mx !== 0 || my !== 0) {
+          const len = Math.hypot(mx, my);
+          player.vx = (mx / len) * baseSpeed;
+          player.vy = (my / len) * baseSpeed;
+          player.x += player.vx * dt;
+          player.y += player.vy * dt;
+        } else if (pointer.active) {
+          const dx = pointer.x - player.x;
+          const dy = pointer.y - player.y;
+          const dist = Math.hypot(dx, dy);
+          if (dist > 2) {
+            const follow = Math.min(1, dt * (player.dashTime > 0 ? 20 : 12));
+            player.vx = (dx * follow) / Math.max(dt, 0.001);
+            player.vy = (dy * follow) / Math.max(dt, 0.001);
+            player.x += dx * follow;
+            player.y += dy * follow;
+          } else {
+            player.vx *= 0.8;
+            player.vy *= 0.8;
+          }
+        } else {
+          player.vx *= 0.86;
+          player.vy *= 0.86;
+        }
+
+        player.x = Math.min(Math.max(player.x, 24), width - 24);
+        player.y = Math.min(Math.max(player.y, 24), height - 24);
+        player.angle = Math.max(-0.45, Math.min(0.45, player.vy * 0.0011));
+
+        trail.push({
+          x: player.x - 14,
+          y: player.y,
+          life: 0.25,
+          dash: player.dashTime > 0
+        });
+        if (trail.length > 26) trail.shift();
+        for (let i = trail.length - 1; i >= 0; i--) {
+          trail[i].life -= dt;
+          if (trail[i].life <= 0) trail.splice(i, 1);
+        }
+
+        // Spawners
+        spawnHazardTimer -= dt;
+        if (spawnHazardTimer <= 0) {
+          spawnHazard();
+          const interval = Math.max(0.28, 0.92 - elapsed * 0.012);
+          spawnHazardTimer = interval * (0.75 + Math.random() * 0.5);
+        }
+
+        spawnStarTimer -= dt;
+        if (spawnStarTimer <= 0) {
+          spawnPickup("star");
+          spawnStarTimer = 1.05 + Math.random() * 0.7;
+        }
+
+        spawnShieldTimer -= dt;
+        if (spawnShieldTimer <= 0) {
+          spawnPickup("shield");
+          spawnShieldTimer = 13 + Math.random() * 6;
+        }
+
+        // Update hazards
+        for (let i = hazards.length - 1; i >= 0; i--) {
+          const h = hazards[i];
+          h.x += h.vx * dt;
+          h.y += h.vy * dt;
+          h.rot += h.rotSpeed * dt;
+
+          if (h.x < -h.r - 40 || h.y > height + h.r + 40 || h.y < -h.r - 60) {
+            hazards.splice(i, 1);
+            continue;
+          }
+
+          const dist = Math.hypot(h.x - player.x, h.y - player.y);
+          if (dist < h.r * 0.82 + player.r * 0.85) {
+            if (player.dashTime > 0) {
+              addBurst(h.x, h.y, "#38bdf8", 18, 210);
+              const bonus = 40 * combo;
+              score += bonus;
+              addFloatText(h.x, h.y, `+${bonus}`, "#7dd3fc");
+              playTone(620, 880, 0.1, "triangle", 0.07);
+              hazards.splice(i, 1);
+            } else {
+              hazards.splice(i, 1);
+              damagePlayer();
+            }
+          }
+        }
+
+        // Update pickups
+        for (let i = pickups.length - 1; i >= 0; i--) {
+          const p = pickups[i];
+          p.phase += dt * 5;
+          p.x += p.vx * dt;
+          p.y += (p.vy + Math.sin(p.phase) * 24) * dt;
+
+          if (p.x < -30) {
+            pickups.splice(i, 1);
+            continue;
+          }
+
+          // Subtle magnetic pull when player is close
+          const dx = player.x - p.x;
+          const dy = player.y - p.y;
+          const dist = Math.hypot(dx, dy);
+          if (dist < 110 && dist > 1) {
+            p.x += (dx / dist) * 230 * dt;
+            p.y += (dy / dist) * 230 * dt;
+          }
+
+          if (dist < p.r + player.r + 4) {
+            if (p.kind === "star") {
+              combo = Math.min(12, combo + 1);
+              maxCombo = Math.max(maxCombo, combo);
+              comboTimer = 4.2;
+              const pts = 50 * combo;
+              score += pts;
+              player.energy = Math.min(100, player.energy + 12);
+              playTone(660 + combo * 35, 980 + combo * 40, 0.12, "sine", 0.08);
+              addBurst(p.x, p.y, "#fbbf24", 14, 150);
+              addFloatText(p.x, p.y - 8, `+${pts}`, "#fbbf24");
+            } else {
+              if (player.lives < player.maxLives) {
+                player.lives += 1;
+                addFloatText(p.x, p.y - 8, "护盾 +1", "#34d399");
+              } else {
+                const pts = 180 * combo;
+                score += pts;
+                addFloatText(p.x, p.y - 8, `满盾奖励 +${pts}`, "#34d399");
+              }
+              player.energy = 100;
+              playTone(500, 1040, 0.22, "triangle", 0.09);
+              addBurst(p.x, p.y, "#34d399", 20, 190);
+            }
+            pickups.splice(i, 1);
+          }
+        }
+
+        // Particles & float texts
+        for (let i = particles.length - 1; i >= 0; i--) {
+          const pt = particles[i];
+          pt.x += pt.vx * dt;
+          pt.y += pt.vy * dt;
+          pt.vx *= 0.96;
+          pt.vy *= 0.96;
+          pt.life -= dt;
+          if (pt.life <= 0) particles.splice(i, 1);
+        }
+
+        for (let i = floatTexts.length - 1; i >= 0; i--) {
+          const ft = floatTexts[i];
+          ft.y -= 38 * dt;
+          ft.life -= dt;
+          if (ft.life <= 0) floatTexts.splice(i, 1);
+        }
+
+        syncHud();
+      }
+
+      function draw() {
+        ctx.save();
+        // Background gradient
+        const grad = ctx.createLinearGradient(0, 0, width, height);
+        grad.addColorStop(0, "#050916");
+        grad.addColorStop(0.55, "#0a132c");
+        grad.addColorStop(1, "#070b1a");
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, width, height);
+
+        // Screen shake
+        if (shakeTime > 0) {
+          const s = shakeMag * (shakeTime / 0.3);
+          ctx.translate((Math.random() - 0.5) * s, (Math.random() - 0.5) * s);
+        }
+
+        // Nebula accents
+        const neb1 = ctx.createRadialGradient(width * 0.78, height * 0.24, 10, width * 0.78, height * 0.24, width * 0.36);
+        neb1.addColorStop(0, "rgba(139, 92, 246, 0.16)");
+        neb1.addColorStop(1, "rgba(139, 92, 246, 0)");
+        ctx.fillStyle = neb1;
+        ctx.fillRect(0, 0, width, height);
+
+        const neb2 = ctx.createRadialGradient(width * 0.2, height * 0.82, 10, width * 0.2, height * 0.82, width * 0.32);
+        neb2.addColorStop(0, "rgba(56, 189, 248, 0.12)");
+        neb2.addColorStop(1, "rgba(56, 189, 248, 0)");
+        ctx.fillStyle = neb2;
+        ctx.fillRect(0, 0, width, height);
+
+        // Starfield
+        for (const s of bgStars) {
+          ctx.fillStyle = `rgba(226, 232, 240, ${s.alpha})`;
+          ctx.beginPath();
+          ctx.arc(s.x * width, s.y * height, s.r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Pickups
+        for (const p of pickups) {
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          if (p.kind === "star") {
+            const pulse = 1 + Math.sin(p.phase * 1.4) * 0.12;
+            ctx.scale(pulse, pulse);
+            ctx.shadowColor = "#fbbf24";
+            ctx.shadowBlur = 16;
+            ctx.fillStyle = "#fde68a";
+            ctx.beginPath();
+            for (let i = 0; i < 8; i++) {
+              const r = i % 2 === 0 ? p.r : p.r * 0.42;
+              const a = (Math.PI / 4) * i;
+              if (i === 0) ctx.moveTo(Math.cos(a) * r, Math.sin(a) * r);
+              else ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+            }
+            ctx.closePath();
+            ctx.fill();
+          } else {
+            ctx.shadowColor = "#34d399";
+            ctx.shadowBlur = 18;
+            ctx.strokeStyle = "#34d399";
+            ctx.lineWidth = 2.5;
+            ctx.fillStyle = "rgba(52, 211, 153, 0.25)";
+            ctx.beginPath();
+            ctx.arc(0, 0, p.r, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = "#ecfdf5";
+            ctx.fillRect(-5, -1.8, 10, 3.6);
+            ctx.fillRect(-1.8, -5, 3.6, 10);
+          }
+          ctx.restore();
+        }
+
+        // Hazards (asteroids)
+        for (const h of hazards) {
+          ctx.save();
+          ctx.translate(h.x, h.y);
+          ctx.rotate(h.rot);
+          const g = ctx.createRadialGradient(-h.r * 0.3, -h.r * 0.3, 2, 0, 0, h.r);
+          g.addColorStop(0, "#fb7185");
+          g.addColorStop(0.55, "#881337");
+          g.addColorStop(1, "#3b0764");
+          ctx.fillStyle = g;
+          ctx.strokeStyle = "rgba(253, 164, 175, 0.6)";
+          ctx.lineWidth = 1.6;
+          ctx.beginPath();
+          for (let i = 0; i < h.sides; i++) {
+            const a = (Math.PI * 2 * i) / h.sides;
+            const rad = h.r * h.offsets[i];
+            if (i === 0) ctx.moveTo(Math.cos(a) * rad, Math.sin(a) * rad);
+            else ctx.lineTo(Math.cos(a) * rad, Math.sin(a) * rad);
+          }
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        // Trail & Player
+        if (player && state !== "menu") {
+          for (const t of trail) {
+            const alpha = Math.max(0, t.life / 0.25) * 0.55;
+            ctx.fillStyle = t.dash
+              ? `rgba(167, 139, 250, ${alpha})`
+              : `rgba(56, 189, 248, ${alpha})`;
+            ctx.beginPath();
+            ctx.arc(t.x, t.y, t.dash ? 7 * alpha : 5 * alpha, 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          const blink = player.invuln > 0 && Math.floor(player.invuln * 16) % 2 === 0;
+          if (!blink || player.dashTime > 0) {
+            ctx.save();
+            ctx.translate(player.x, player.y);
+            ctx.rotate(player.angle);
+
+            // Dash / Invuln halo
+            if (player.dashTime > 0 || player.invuln > 0) {
+              ctx.strokeStyle = player.dashTime > 0 ? "rgba(167, 139, 250, 0.9)" : "rgba(56, 189, 248, 0.55)";
+              ctx.lineWidth = 2.5;
+              ctx.beginPath();
+              ctx.arc(0, 0, player.r + 9, 0, Math.PI * 2);
+              ctx.stroke();
+            }
+
+            ctx.shadowColor = player.dashTime > 0 ? "#a78bfa" : "#38bdf8";
+            ctx.shadowBlur = 18;
+
+            // Ship hull
+            const hull = ctx.createLinearGradient(-16, 0, 20, 0);
+            hull.addColorStop(0, "#38bdf8");
+            hull.addColorStop(1, "#e0f2fe");
+            ctx.fillStyle = hull;
+            ctx.beginPath();
+            ctx.moveTo(20, 0);
+            ctx.lineTo(-14, -13);
+            ctx.lineTo(-8, 0);
+            ctx.lineTo(-14, 13);
+            ctx.closePath();
+            ctx.fill();
+
+            // Cockpit
+            ctx.fillStyle = "#0f172a";
+            ctx.beginPath();
+            ctx.ellipse(3, 0, 5.5, 3.2, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+          }
+        }
+
+        // Particles
+        for (const pt of particles) {
+          ctx.globalAlpha = Math.max(0, pt.life / pt.maxLife);
+          ctx.fillStyle = pt.color;
+          ctx.beginPath();
+          ctx.arc(pt.x, pt.y, pt.r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+
+        // Floating scores
+        ctx.font = "700 14px -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif";
+        ctx.textAlign = "center";
+        for (const ft of floatTexts) {
+          ctx.globalAlpha = Math.max(0, ft.life / ft.maxLife);
+          ctx.fillStyle = ft.color;
+          ctx.fillText(ft.text, ft.x, ft.y);
+        }
+        ctx.globalAlpha = 1;
+
+        ctx.restore();
+      }
+
+      // Input handlers
+      window.addEventListener("keydown", (e) => {
+        if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(e.code)) {
+          e.preventDefault();
+        }
+        keys.add(e.code);
+        if (e.code === "Space") {
+          if (state === "menu" || state === "over") startGame();
+          else triggerDash();
+        }
+        if (e.code === "KeyP" || e.code === "Escape") {
+          if (state === "playing" || state === "paused") togglePause();
+        }
+      });
+
+      window.addEventListener("keyup", (e) => {
+        keys.delete(e.code);
+      });
+
+      function updatePointer(clientX, clientY) {
+        const rect = canvas.getBoundingClientRect();
+        pointer.x = clientX - rect.left;
+        pointer.y = clientY - rect.top;
+      }
+
+      canvas.addEventListener("pointerdown", (e) => {
+        pointer.active = true;
+        updatePointer(e.clientX, e.clientY);
+        const now = performance.now();
+        if (now - pointer.lastTap < 280) {
+          triggerDash();
+        }
+        pointer.lastTap = now;
+      });
+
+      canvas.addEventListener("pointermove", (e) => {
+        if (e.pointerType === "mouse" && state === "playing") {
+          pointer.active = true;
+          updatePointer(e.clientX, e.clientY);
+        } else if (pointer.active) {
+          updatePointer(e.clientX, e.clientY);
+        }
+      });
+
+      window.addEventListener("pointerup", () => {
+        pointer.active = false;
+      });
+
+      startBtn.addEventListener("click", startGame);
+      restartBtn.addEventListener("click", startGame);
+      resumeBtn.addEventListener("click", togglePause);
+      pauseBtn.addEventListener("click", togglePause);
+
+      soundBtn.addEventListener("click", () => {
+        soundOn = !soundOn;
+        soundBtn.textContent = soundOn ? "🔊 音效" : "🔇 静音";
+      });
+
+      window.addEventListener("resize", resize);
+      resize();
+      resetGame();
+
+      let last = performance.now();
+      function loop(now) {
+        const dt = Math.min(0.05, (now - last) / 1000);
+        last = now;
+        update(dt);
+        draw();
+        requestAnimationFrame(loop);
+      }
+      requestAnimationFrame(loop);
+    })();
+  </script>
+</body>
+</html>
